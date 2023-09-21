@@ -1,11 +1,38 @@
 package main
 
 import (
+	"github.com/Sane4ek55/demo_bot/internal/service/product"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
 )
+
+func listCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message, productService *product.Service) {
+	outputMsgText := "All the products: \n\n"
+	products := productService.List()
+
+	for _, p := range products {
+		outputMsgText += p.Title
+		outputMsgText += "\n"
+	}
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, outputMsgText)
+	bot.Send(msg)
+}
+
+func helpCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message) {
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID,
+		"/help - help\n"+
+			"/list - list products")
+	bot.Send(msg)
+}
+
+func defaultCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message) {
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "Your wrote: "+inputMessage.Text)
+	msg.ReplyToMessageID = inputMessage.MessageID
+
+	bot.Send(msg)
+}
 
 func main() {
 	godotenv.Load()
@@ -30,16 +57,23 @@ func main() {
 		log.Panic(err)
 	}
 
+	productService := product.NewService()
+
 	for update := range updates {
 		if update.Message == nil {
 			continue
 		}
+		switch update.Message.Command() {
+		case "help":
+			helpCommand(bot, update.Message)
+		case "list":
+			listCommand(bot, update.Message, productService)
+		default:
+			defaultCommand(bot, update.Message)
+
+		}
 
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Your wrote: "+update.Message.Text)
-		msg.ReplyToMessageID = update.Message.MessageID
-
-		bot.Send(msg)
 	}
 }
