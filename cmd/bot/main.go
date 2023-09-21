@@ -38,7 +38,6 @@ func main() {
 	godotenv.Load()
 	token := os.Getenv("TOKEN")
 
-	//myTokenBot := "6095770616:AAF6CjZG-QGASyS9LwWwT7SiXNi2s4WiOE8"
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
